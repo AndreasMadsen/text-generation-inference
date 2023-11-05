@@ -230,17 +230,21 @@ fn main() -> Result<(), RouterError> {
                     if max_batch_total_tokens.is_some() {
                         tracing::warn!(
                             "`--max-batch-total-tokens` is deprecated for Flash \
-                        Attention models."
+                            Attention models."
                         );
                         tracing::warn!(
                             "Inferred max batch total tokens: {max_supported_batch_total_tokens}"
                         );
                     }
-                    if max_total_tokens as u32 > max_supported_batch_total_tokens {
-                        return Err(RouterError::ArgumentValidation(format!("`max_total_tokens` must be <= `max_batch_total_tokens`. Given: {max_total_tokens} and {max_supported_batch_total_tokens}")));
+
+                    let max_batch_total_tokens_clamped = max_supported_batch_total_tokens.min(
+                        max_batch_total_tokens.unwrap_or(max_supported_batch_total_tokens)
+                    );
+                    if max_total_tokens as u32 > max_batch_total_tokens_clamped {
+                        return Err(RouterError::ArgumentValidation(format!("`max_total_tokens` must be <= `max_batch_total_tokens`. Given: {max_total_tokens} and {max_batch_total_tokens_clamped}")));
                     }
 
-                    max_supported_batch_total_tokens
+                    max_batch_total_tokens_clamped
                 }
             };
             tracing::info!("Setting max batch total tokens to {max_supported_batch_total_tokens}");
